@@ -1,9 +1,10 @@
-from datetime import datetime
+from datetime import date, datetime
 # Importe suas classes conforme a estrutura do seu projeto
 from model.veiculos import Categoria
 from model.veiculo_factory import VeiculoFactory
 from model.locacoes import Locacao
 from model.excecoes_personalizadas import PlacaInvalidaError, DataInvalidaError
+from model.calcular_valor_locacao import CalculoPadraoStrategy, CalculoVIPStrategy
 
 def executar_testes():
     print("=== INICIANDO TESTES DO SISTEMA DE LOCAÇÃO ===\n")
@@ -49,7 +50,17 @@ def executar_testes():
     try:
         VeiculoFactory.criar_veiculo("carro", "1234567", Categoria.ECONOMICO)
     except Exception as e:
-        print(f"Placa Inválida -> {e}")
+        print(f"{e}")
+    
+    print("\n--- Teste 7: Calculo Padrão  ---")
+    data_in = date(2026, 3, 10)
+    data_out = date(2026, 3, 15)
+    locacao_normal = Locacao(carro, data_in, data_out, CalculoPadraoStrategy())
+    print(f"Valor Padrão: {locacao_normal.calcular_valor_locacao()}")
+
+    print("\n--- Teste 8: Calculo VIP  ---")
+    locacao_vip = Locacao(carro, data_in, data_out, CalculoVIPStrategy())
+    print(f"Valor Cliente VIP: {locacao_vip.calcular_valor_locacao()}")
 
     print("\n=== TESTES FINALIZADOS ===")
 

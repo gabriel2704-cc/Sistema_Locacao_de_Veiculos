@@ -1,10 +1,12 @@
 from datetime import datetime
 from .veiculos import Veiculo
+from .calcular_valor_locacao import CalculoLocacaoStrategy, CalculoPadraoStrategy, CalculoVIPStrategy
 
 
 class Locacao:
-    def __init__(self, veiculo: Veiculo, data_in: datetime, data_fim: datetime):
+    def __init__(self, veiculo: Veiculo, data_in: datetime, data_fim: datetime, estrategia=CalculoPadraoStrategy() ):
         self.veiculo = veiculo # Isso chama o @veiculo.setter
+        self.estrategia = estrategia
         self.data_in = data_in  # Atributo simples (sem property)
         self.data_fim = data_fim # Atributo simples (sem property)
 
@@ -29,7 +31,4 @@ class Locacao:
         if dias == 0:
             dias = 1
 
-        total_diarias = dias * self.__veiculo.taxa_diaria 
-        total = total_diarias + self.__veiculo.valor_seguro
-
-        return total
+        return float(self.estrategia.calcular_diarias(self.veiculo, dias))
