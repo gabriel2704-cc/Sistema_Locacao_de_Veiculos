@@ -6,6 +6,7 @@ from model.locacoes import Locacao
 from model.excecoes_personalizadas import PlacaInvalidaError, DataInvalidaError
 from model.calcular_valor_locacao import CalculoPadraoStrategy, CalculoVIPStrategy
 from model.estados_veiculo import DisponivelState, AlugadoState, ManutencaoState
+from model.decoradores import GPSDecorator, SeguroTerceirosDecorator
 
 def executar_testes():
     print("=== INICIANDO TESTES DO SISTEMA DE LOCAÇÃO ===\n")
@@ -81,6 +82,25 @@ def executar_testes():
 # 5. Colocar em checkups da empresa
     carro_estado.reter_na_frota_pra_conserto() # Ok 
     carro_estado.tentar_alugar() # Falha! Está em Manutenção.
+    
+
+    print("\n--- Teste 10: PADRÃO DECORATOR ---")
+# 1. Base simples
+    data_in = date(2026, 3, 1)
+    data_out = date(2026, 3, 5)
+    locacao_normal = Locacao(carro, data_in, data_out, CalculoPadraoStrategy())
+    locacao_base = locacao_normal
+    print(f"Valor Base (somente Diária + Seguro Base): R$ {locacao_base.calcular_valor_locacao()}")
+
+# 2. Base + GPS
+    locacao_com_gps = GPSDecorator(locacao_base)
+    print(f"Valor somado do pacote + GPS: R$ {locacao_com_gps.calcular_valor_locacao()}")
+
+# 3. Empurrar SeguroTerceiros Por Cima De Tudo (Envelopamento)
+    locacao_vip_top = SeguroTerceirosDecorator(locacao_com_gps)
+    print(f"Valor pacote completão (Base + GPS + Seg.Terceiros): R$ {locacao_vip_top.calcular_valor_locacao()}")
+
+
 
 
 
