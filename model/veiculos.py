@@ -64,9 +64,15 @@ class Veiculo(ABC):
                     raise PlacaInvalidaError(f" {placa} Placa Inválida! O 4º, 6º e 7º caracteres devem ser números")
                 elif not placa[4].isalnum():
                     raise PlacaInvalidaError(f" {placa} Placa Inválida!! O 5º caracter deve ser uma letra ou número")
-                else:
-                    print(f"Placa {placa} válida!!") 
-                    return True
+            
+        return True
+    
+    def exibir_dados(self):
+        """Retorna uma string com os dados formatados do veículo."""
+        return (f"Placa: {self.placa}\n"
+                f"Categoria: {self.categoria.value}\n"
+                f"Taxa Diária: R$ {self.taxa_diaria:.2f}\n"
+                f"Estado: {self.estado_atual.__class__.__name__}")
                     
       #--------------------------------------------#   
 class Carro(Veiculo):
