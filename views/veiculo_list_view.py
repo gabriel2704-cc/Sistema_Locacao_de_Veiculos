@@ -69,22 +69,21 @@ class VeiculoListView:
         cat = self.cb_cat.get()
         taxa = self.ent_taxa.get()
 
-        # Dentro do método processar_cadastro:
+       
         cat_selecionada = self.cb_cat.get() 
         # Converte a string do Combobox para o objeto Enum correspondente
         categoria_enum = Categoria[cat_selecionada]
 
-        # Validação Simples (Passo 2.3.2) 
         if not all([placa, tipo, cat, taxa]):
             messagebox.showwarning("Erro", "Preencha todos os campos!")
             return
 
         try:
             taxa_float = float(taxa)
-            # Chama a factory passando o Enum e a taxa convertida
+            
             novo_v = VeiculoFactory.criar_veiculo(tipo, placa, taxa_float, categoria_enum)
     
-            # Se chegou aqui, a placa é válida! (O Model retornou True internamente)
+            
             id_linha = self.tree.insert("", "end", values=(placa, tipo, cat_selecionada, f"R$ {taxa_float:.2f}"))
             self.veiculos_na_memoria[id_linha] = novo_v # Armazena o objeto real no dicionário usando o ID da linha como chave
 
@@ -92,7 +91,7 @@ class VeiculoListView:
             
             self.janela_cad.destroy()
         except PlacaInvalidaError as e:
-            # Exibe a mensagem exata que você definiu no Model (ex: "Os primeiros 3 caracteres...")
+            # Exibe a mensagem exata do Model 
             messagebox.showerror("Erro de Placa", str(e))
         except ValueError:
             messagebox.showerror("Erro de Valor", "A taxa diária deve ser um número!") 
@@ -104,7 +103,7 @@ class VeiculoListView:
             id_da_linha = item_selecionado[0]
             # Recupera o objeto real do dicionário
             veiculo_obj = self.veiculos_na_memoria[id_da_linha]
-             # Agora sim você chama o método do MODEL 
+            
             mensagem = veiculo_obj.exibir_dados() 
             messagebox.showinfo("Detalhes do Veículo", mensagem)
         else:
@@ -115,7 +114,7 @@ class VeiculoListView:
         if selecionado:
             id_da_linha = selecionado[0]
             self.tree.delete(id_da_linha)
-            
+
             if id_da_linha in self.veiculos_na_memoria:
                 del self.veiculos_na_memoria[id_da_linha] 
             messagebox.showinfo("Remoção", "Veículo removido com sucesso!") 
