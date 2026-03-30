@@ -35,6 +35,9 @@ class VeiculoListView:
 
         self.btn_remover = tk.Button(frame_botoes, text="Remover", command=self.remover_veiculo, width=15) 
         self.btn_remover.pack(side="left", padx=5)
+        
+        self.botao_fechar = tk.Button(frame_botoes, text="Fechar", command=self.janela.destroy, width=15)
+        self.botao_fechar.pack(side="left", padx=5)
 
    
     def abrir_cadastro(self):
