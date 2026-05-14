@@ -25,10 +25,10 @@ from view.janela_principal_view import JanelaPrincipal
 
 ## O tk.Toplevel é uma classe do Tkinter usada para criar Janelas Secundárias que rodam 
 # "por cima" de uma tela principal (que é geralmente o tk.Tk()).
-class JanelaListagemVeiculos(tk.Toplevel):
+class JanelaListagemLocacoes(tk.Toplevel):
     def __init__(self, master=None):
         super().__init__(master)
-        self.title("Veículos Cadastrados")
+        self.title("Locações Cadastradas")
         self.geometry("800x400")
         
         self.controller = VeiculoController()
@@ -37,7 +37,7 @@ class JanelaListagemVeiculos(tk.Toplevel):
         self.carregar_dados()
 
     def criar_widgets(self):
-        lbl_titulo = tk.Label(self, text="Veículos Cadastrados", font=("Helvetica", 16, "bold"))
+        lbl_titulo = tk.Label(self, text="Locações Cadastradas", font=("Helvetica", 16, "bold"))
         lbl_titulo.pack(pady=10)
 
         # Frame para a Treeview e Scrollbar
@@ -50,7 +50,7 @@ class JanelaListagemVeiculos(tk.Toplevel):
 
 
         # Treeview (Tabela)
-        colunas = ("Placa", "Tipo", "Categoria", "Taxa Diária (R$)")
+        colunas = ("Veículo", "Data Início", "Data Fim", "Total diarias", "Valor Total", "Status")
         self.tree = ttk.Treeview(frame_tree, columns=colunas, show="headings", yscrollcommand=scrollbar.set)
         
         # Configurar cabeçalhos e colunas
@@ -83,8 +83,9 @@ class JanelaListagemVeiculos(tk.Toplevel):
 
     def abrir_novo(self):
         # Vai reaproveitar a JanelaCadastroVeiculo
-        from view.veiculo_view import JanelaCadastroVeiculo
-        janela_cadastro = JanelaCadastroVeiculo(self)
+        from view.locacao_view import JanelaCadastroLocacao
+        janela_cadastro = JanelaCadastroLocacao(self)
+        
         
         # Faz a janela de listagem "esperar" até que a janela de cadastro seja fechada
         self.wait_window(janela_cadastro)
