@@ -5,7 +5,7 @@ import os
 # Adiciona o diretório raiz ao sys.path para garantir que os módulos sejam encontrados
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 
-from view.veiculo_list_view import JanelaListagemVeiculos
+from view.janela_principal_view import JanelaPrincipal
 from model.veiculo import VeiculoFactory, Categoria
 import view.veiculo_list_view as list_view
 
@@ -21,8 +21,9 @@ if __name__ == "__main__":
     root = tk.Tk()
     root.withdraw() # Esconde a janela principal do Tkinter raiz vazia
     
-    app = JanelaListagemVeiculos(master=root)
+    app = JanelaPrincipal(master=root)
     # Quando a janela do Toplevel for fechada, encerra o programa
     app.protocol("WM_DELETE_WINDOW", root.destroy)
+    
     
     root.mainloop()
