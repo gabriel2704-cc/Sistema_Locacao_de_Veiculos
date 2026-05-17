@@ -18,7 +18,7 @@ O sistema foi estruturado seguindo o padrão **MVC (Model-View-Controller)** com
 Representa a entidade de negócio. Guarda os dados fundamentais do contrato (IDs, veículo, datas e valores) e controla o ciclo de vida da locação através do atributo `status` (mapeado como `enum` com os estados: `"reservado"`, `"locado"`, `"devolvido"` e `"cancelado"`).
 
 ### View (Interface Gráfica)
-Construída com **Tkinter**. A `JanelaPrincipal` (`tk.Tk`) gerencia a barra de menus do sistema, e todas as outras telas secundárias herdam de `tk.Toplevel`, abrindo como janelas filhas.
+Construída com **Tkinter**. A `JanelaPrincipal` gerencia a barra de menus do sistema, e todas as outras telas secundárias herdam de `tk.Toplevel`, abrindo como janelas filhas.
 - `JanelaLocacaoUsuario`: Tela operacional com a tabela (Treeview) e botões que mudam de acordo com o status da locação.
 - `JanelaNovaReserva`: Formulário que filtra e mostra apenas os veículos disponíveis no período escolhido.
 - `JanelaListagemLocacoes` & `JanelaCadastroLocacao` (Admin): Telas exclusivas para o administrador manipular os dados livremente.
@@ -54,9 +54,9 @@ Responsável por isolar e executar os comandos SQL no PostgreSQL. Além do CRUD 
 
 ## Fluxo de Navegação e Hierarquia de Telas
 
-O diagrama abaixo ilustra como as visões se interligam a partir do menu principal da aplicação, respeitando a dependência mútua e a hierarquia do Tkinter (`tk.Tk` ➔ `tk.Toplevel`):
+O diagrama abaixo ilustra como as visões se interligam a partir do menu principal da aplicação, respeitando a dependência mútua e a hierarquia do Tkinter:
 
-JanelaPrincipal (tk.Tk)
+JanelaPrincipal (tk.Toplevel)
 │
 ├── [ Menu: Cadastro ]
 │         │
