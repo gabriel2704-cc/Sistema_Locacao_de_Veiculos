@@ -3,88 +3,127 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import tkinter as tk
-from tkinter import messagebox, ttk
-from model.veiculo import VeiculoFactory, Categoria
-import view.locacao_list_view as list_view
-from control.veiculo_controller import VeiculoController
+from tkinter import ttk, messagebox
+from datetime import date, datetime
+from control.locacao_controller import LocacaoController
+from model.locacao import Locacao, StatusLocacao
+
 
 class JanelaCadastroLocacao(tk.Toplevel):
-    def __init__(self, master=None, veiculo_existente=None):
+    """Formulário de criação/edição de locação (visão Administrador)."""
+
+    # Lista dos valores string dos status para o Combobox
+    STATUSES = [s.value for s in StatusLocacao]
+
+    def __init__(self, master=None, locacao_existente: Locacao = None):
         super().__init__(master)
-        
-        self.veiculo_existente = veiculo_existente
-        self.title("Atualizar Locação" if veiculo_existente else "Cadastro de Nova Locação")
-        
-        self.geometry("400x350")
-        self.controller = VeiculoController()
-        
-        
-        
-        # Label de título
-        texto_titulo = "Atualizar Locação" if veiculo_existente else "Cadastrar Locação"
-        lbl_titulo = tk.Label(self, text=texto_titulo, font=("Helvetica", 16, "bold"))
-        
-        lbl_titulo.pack(pady=10)
+        self.locacao_existente = locacao_existente
+        self.controller = LocacaoController()
+        self._veiculos_disponiveis = []
 
-        # Placa
-        frame_placa = tk.Frame(self)
-        frame_placa.pack(pady=5, fill="x", padx=20)
-        tk.Label(frame_placa, text="Placa:").pack(side="left")
-        self.txt_placa = tk.Entry(frame_placa)
-        self.txt_placa.pack(side="right")
+        titulo = "Editar Locação" if locacao_existente else "Nova Locação (Admin)"
+        self.title(titulo)
+        self.geometry("420x420")
 
-        # Tipo
-        frame_tipo = tk.Frame(self)
-        frame_tipo.pack(pady=5, fill="x", padx=20)
-        tk.Label(frame_tipo, text="Tipo (carro/motorhome):").pack(side="left")
-        self.txt_tipo = tk.Entry(frame_tipo)
-        self.txt_tipo.pack(side="right", expand=True, fill="x")
+        tk.Label(self, text=titulo, font=("Helvetica", 14, "bold")).pack(pady=8)
 
-        # Categoria (ComboBox)
-        frame_cat = tk.Frame(self)
-        frame_cat.pack(pady=5, fill="x", padx=20)
-        tk.Label(frame_cat, text="Categoria:").pack(side="left")
-        self.cb_categoria = ttk.Combobox(frame_cat, values=["ECONOMICO", "EXECUTIVO", "LUXO"])
-        self.cb_categoria.current(0)
-        self.cb_categoria.pack(side="right", expand=True, fill="x")
+        # --- Data Início ---
+        f = tk.Frame(self); f.pack(fill="x", padx=20, pady=3)
+        tk.Label(f, text="Data Início (AAAA-MM-DD):", width=24, anchor="w").pack(side="left")
+        self.txt_data_in = tk.Entry(f); self.txt_data_in.pack(side="right", expand=True, fill="x")
 
-        # Taxa Diária
-        frame_taxa = tk.Frame(self)
-        frame_taxa.pack(pady=5, fill="x", padx=20)
-        tk.Label(frame_taxa, text="Taxa Diária (R$):").pack(side="left")
-        self.txt_taxa = tk.Entry(frame_taxa)
-        self.txt_taxa.pack(side="right", expand=True, fill="x")
+        # --- Data Fim ---
+        f = tk.Frame(self); f.pack(fill="x", padx=20, pady=3)
+        tk.Label(f, text="Data Fim (AAAA-MM-DD):", width=24, anchor="w").pack(side="left")
+        self.txt_data_fim = tk.Entry(f); self.txt_data_fim.pack(side="right", expand=True, fill="x")
 
-        # Botão Cadastrar \ Atualizar
-        # Removido bg/fg para compatibilidade com botões nativos do macOS
-        texto_botao = "Atualizar Locação" if veiculo_existente else "Salvar Locação"
-        btn_cadastrar = tk.Button(self, text=texto_botao, command=self.solicitar_cadastro)
-        
-        btn_cadastrar.pack(pady=20)
-        
-        # Preencher dados se for edição
-        if self.veiculo_existente:
-            self.txt_placa.insert(0, self.veiculo_existente.placa)
-            self.txt_placa.config(state="disabled") # Placa não pode ser alterada
-            self.txt_tipo.insert(0, self.veiculo_existente.__class__.__name__)
-            self.cb_categoria.set(self.veiculo_existente.categoria)
-            self.txt_taxa.insert(0, f"{self.veiculo_existente.taxa_diaria}")
+        # --- Botão buscar veículos ---
+        tk.Button(self, text="Buscar Veículos Disponíveis",
+                  command=self._buscar_veiculos).pack(pady=4)
 
-    def solicitar_cadastro(self):
-        placa = self.txt_placa.get().strip().upper()
-        tipo = self.txt_tipo.get().strip()
-        categoria = self.cb_categoria.get().strip()
-        taxa_str = self.txt_taxa.get().strip()
+        # --- ComboBox veículos ---
+        f = tk.Frame(self); f.pack(fill="x", padx=20, pady=3)
+        tk.Label(f, text="Veículo:", width=24, anchor="w").pack(side="left")
+        self.cb_veiculo = ttk.Combobox(f, state="readonly"); self.cb_veiculo.pack(side="right", expand=True, fill="x")
 
-        if self.veiculo_existente:
-            sucesso, msg = self.controller.atualizar_veiculo(placa, tipo, categoria, taxa_str)
+        # --- Status (somente Admin) ---
+        f = tk.Frame(self); f.pack(fill="x", padx=20, pady=3)
+        tk.Label(f, text="Status:", width=24, anchor="w").pack(side="left")
+        self.cb_status = ttk.Combobox(f, values=self.STATUSES, state="readonly")
+        self.cb_status.current(0); self.cb_status.pack(side="right", expand=True, fill="x")
+
+        texto_btn = "Salvar Alterações" if locacao_existente else "Cadastrar Locação"
+        tk.Button(self, text=texto_btn, command=self._solicitar_salvar).pack(pady=14)
+
+        # Preenche dados em modo edição
+        if locacao_existente:
+            self.txt_data_in.insert(0, str(locacao_existente.data_inicio))
+            self.txt_data_fim.insert(0, str(locacao_existente.data_fim) if locacao_existente.data_fim else "")
+            self.cb_status.set(locacao_existente.status.value)  # <-- .value para exibir string no Combobox
+            # mostra placa do veículo atual
+            self.cb_veiculo["values"] = [locacao_existente.veiculo.placa]
+            self.cb_veiculo.current(0)
+
+    def _parse_data(self, texto: str) -> date:
+        return datetime.strptime(texto.strip(), "%Y-%m-%d").date()
+
+    def _buscar_veiculos(self):
+        try:
+            data_in  = self._parse_data(self.txt_data_in.get())
+            data_fim = self._parse_data(self.txt_data_fim.get())
+        except ValueError:
+            messagebox.showerror("Erro", "Datas inválidas. Use o formato AAAA-MM-DD.", parent=self)
+            return
+        if data_in > data_fim:
+            messagebox.showerror("Erro", "Data de início deve ser anterior à data de fim.", parent=self)
+            return
+
+        self._veiculos_disponiveis = self.controller.buscar_veiculos_disponiveis(data_in, data_fim)
+        # Em modo edição, incluir o veículo atual na lista se não estiver
+        if self.locacao_existente:
+            placas = [v.placa for v in self._veiculos_disponiveis]
+            if self.locacao_existente.veiculo.placa not in placas:
+                self._veiculos_disponiveis.insert(0, self.locacao_existente.veiculo)
+
+        if not self._veiculos_disponiveis:
+            messagebox.showwarning("Aviso", "Nenhum veículo disponível para o período.", parent=self)
+            self.cb_veiculo["values"] = []
+            return
+
+        opcoes = [f"{v.placa} — {type(v).__name__} — R$ {v.taxa_diaria:.2f}/dia"
+                  for v in self._veiculos_disponiveis]
+        self.cb_veiculo["values"] = opcoes
+        self.cb_veiculo.current(0)
+
+    def _solicitar_salvar(self):
+        try:
+            data_in  = self._parse_data(self.txt_data_in.get())
+            data_fim = self._parse_data(self.txt_data_fim.get())
+        except ValueError:
+            messagebox.showerror("Erro", "Datas inválidas. Use AAAA-MM-DD.", parent=self)
+            return
+
+        if not self.cb_veiculo.get():
+            messagebox.showerror("Erro", "Selecione um veículo.", parent=self)
+            return
+
+        idx = self.cb_veiculo.current()
+        if idx < 0 or idx >= len(self._veiculos_disponiveis):
+            placa = self.locacao_existente.veiculo.placa if self.locacao_existente else ""
         else:
-            sucesso, msg = self.controller.salvar_veiculo(placa, tipo, categoria, taxa_str)
-        
+            placa = self._veiculos_disponiveis[idx].placa
+
+        # Converte a string selecionada no Combobox de volta para Enum
+        status = StatusLocacao(self.cb_status.get())
+
+        if self.locacao_existente:
+            sucesso, msg = self.controller.atualizar_locacao(
+                self.locacao_existente.loc_id, placa, data_in, data_fim, status)
+        else:
+            sucesso, msg = self.controller.salvar_locacao(placa, data_in, data_fim, status)
+
         if sucesso:
             messagebox.showinfo("Sucesso", msg, parent=self)
+            self.destroy()
         else:
-            messagebox.showerror("Erro", msg, parent=self)    
-            
-        self.destroy() # Fecha a janela de cadastro e volta pro menu local
-        
+            messagebox.showerror("Erro", msg, parent=self)

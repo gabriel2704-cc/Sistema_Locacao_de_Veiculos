@@ -4,17 +4,9 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import tkinter as tk
 from tkinter import ttk, messagebox
+from control.locacao_controller import LocacaoController
+from model.locacao import Locacao, StatusLocacao
 
-# persistencia local
-# lista_veiculos = []
-
-#from dao.veiculo_dao import VeiculoDAO
-#veiculo_dao = VeiculoDAO()
-#lista_veiculos = veiculo_dao.listar_todos()
-
-
-from control.veiculo_controller import VeiculoController
-from view.janela_principal_view import JanelaPrincipal
 
 ## Toda aplicação Tkinter só deve possuir uma única janela principal raiz (tk.Tk()). 
 # Se tentar dar tk.Tk() em outra tela, vai abrir outra instância na memória 
@@ -31,7 +23,7 @@ class JanelaListagemLocacoes(tk.Toplevel):
         self.title("Locações Cadastradas")
         self.geometry("800x400")
         
-        self.controller = VeiculoController()
+        self.controller = LocacaoController()
         
         self.criar_widgets()
         self.carregar_dados()
@@ -50,7 +42,7 @@ class JanelaListagemLocacoes(tk.Toplevel):
 
 
         # Treeview (Tabela)
-        colunas = ("Veículo", "Data Início", "Data Fim", "Total diarias", "Valor Total", "Status")
+        colunas = ("ID", "Veículo", "Data Início", "Data Fim", "Total diarias", "Valor Total", "Status")
         self.tree = ttk.Treeview(frame_tree, columns=colunas, show="headings", yscrollcommand=scrollbar.set)
         
         # Configurar cabeçalhos e colunas
@@ -71,142 +63,105 @@ class JanelaListagemLocacoes(tk.Toplevel):
         btn_editar = tk.Button(frame_botoes, text="Editar", width=15, command=self.abrir_editar)
         btn_editar.pack(side="left", padx=5)
         
-        btn_info = tk.Button(frame_botoes, text="Ver Informações", width=15, command=self.mostrar_info)
+        btn_info = tk.Button(frame_botoes, text="Ver Informações", width=15, command=self.ver_detalhes)
         btn_info.pack(side="left", padx=5)
 
-        btn_remover = tk.Button(frame_botoes, text="Remover", width=10, command=self.remover_veiculo)
+        btn_remover = tk.Button(frame_botoes, text="Remover", width=10, command=self.remover_locacao)
         btn_remover.pack(side="left", padx=5)
 
         # Botão Fechar no canto direito
         btn_fechar = tk.Button(frame_botoes, text="Fechar", width=10, command=self.destroy)
         btn_fechar.pack(side="right", padx=5)
 
-    def abrir_novo(self):
-        # Vai reaproveitar a JanelaCadastroVeiculo
-        from view.locacao_view import JanelaCadastroLocacao
-        janela_cadastro = JanelaCadastroLocacao(self)
-        
-        
-        # Faz a janela de listagem "esperar" até que a janela de cadastro seja fechada
-        self.wait_window(janela_cadastro)
-        
-        # Recarrega os dados na tabela após o cadastro ser concluído
-        self.carregar_dados()
-
-    def mostrar_info(self):
-        # 1. Verifica qual linha da tabela (Treeview) está selecionada
-        selecionado = self.tree.selection()
-        
-        # 2. Se nenhuma linha foi selecionada, exibe um aviso e cancela a ação (Return)
-        if not selecionado:
-            messagebox.showwarning("Aviso", "Selecione um veículo para visualizar informações.", parent=self)
-            return
-            
-        # 3. Pega os valores da linha que foi clicada. 
-        # O item['values'][0] é a primeira coluna da tabela (que configuramos para ser a Placa)
-        item = self.tree.item(selecionado[0])
-        placa = item['values'][0]
-            
-        # 4. Trazemos a "lista_veiculos" global, onde todos os objetos de modelo estão salvos.
-        #global lista_veiculos
-        #lista_veiculos = veiculo_dao.listar_todos()
-        
-        
-        # 5. Procura na lista o objeto exato do Veículo que tenha a mesma placa da linha clicada
-        # O comando "next(...)" retorna o primeiro veículo encontrado que possui essa placa.
-        #veiculo = next((v for v in lista_veiculos if v.placa == placa), None)
-        
-        veiculo = self.controller.buscar_por_placa(placa)
-            
-        # 6. Se o veículo foi encontrado na lista de persistência...
-        if veiculo:
-            try:
-                # Chama o método exibir_dados() da classe modelo (Carro/Motorhome) que acabamos de adicionar
-                info = veiculo.exibir_dados()
-            except AttributeError:
-                # Caso a classe do modelo não tenha o método exibir_dados() por alguma razão,
-                # cria uma string básica com as informações para evitar que o código quebre
-                info = f"Placa: {veiculo.placa}\nCategoria: {veiculo.categoria}\nTaxa: R$ {veiculo.taxa_diaria:.2f}"
-            
-            # 7. Dispara a Caixa de Diálogo do Windows/Mac (Popup) apresentando no centro da tela as informações obtidas
-            messagebox.showinfo("Informações do Veículo", info, parent=self)
-        else:
-            # 8. Só vai cair aqui se por algum motivo houver erro de inconsistência 
-            # (ex: Constava na tabela mas foi excluído do código/banco localmente).
-            messagebox.showerror("Erro", "Veículo não encontrado.", parent=self)
-
-
-    def remover_veiculo(self):
-        # 1. Verifica qual linha da tabela (Treeview) está selecionada
-        selecionado = self.tree.selection()
-        
-        # 2. Se nenhuma linha foi selecionada, exibe um aviso e cancela a ação (Return)
-        if not selecionado:
-            messagebox.showwarning("Aviso", "Selecione um veículo para remover.", parent=self)
-            return
-
-        # 3. Pega os valores da linha que foi clicada, com informação da placa - 1º dado da linha
-        item = self.tree.item(selecionado[0])
-        placa = item['values'][0]
-        
-        # 4. Verifica se o usuário quer remover o objeto
-        resposta = messagebox.askyesno("Confirmar Exclusão", f"Tem certeza que deseja remover o veículo de placa {placa}?", parent=self)
-        if resposta:
-            # 5. Chama o controller para remover do banco de dados
-            sucesso, msg = self.controller.remover_veiculo(placa)
-            
-            if sucesso:
-                messagebox.showinfo("Sucesso", msg, parent=self)
-                # 6. Recarregar as informações na tabela
-                self.carregar_dados()
-            else:
-                messagebox.showerror("Erro", msg, parent=self)
-
     def carregar_dados(self):
         for row in self.tree.get_children():
             self.tree.delete(row)
-            
-        veiculos = self.controller.listar_veiculos()
-        
-        if veiculos is None:
-             messagebox.showerror("Erro", "Erro ao carregar veículos.", parent=self)
-             return
-             
-        for v in veiculos:
-            tipo_nome = type(v).__name__
-            taxa_formatada = f"R$ {v.taxa_diaria:.2f}".replace('.', ',')
-            categoria_texto = v.categoria.name if hasattr(v.categoria, 'name') else str(v.categoria)
-            
+        locacoes = self.controller.listar_locacoes()
+        for loc in locacoes:
+            valor_fmt = f"R$ {loc.calcular_valor_locacao():.2f}" if loc.data_fim else "-"
             self.tree.insert("", "end", values=(
-                v.placa, 
-                tipo_nome, 
-                categoria_texto, 
-                taxa_formatada
+                loc.loc_id,
+                loc.veiculo.placa,
+                loc.data_inicio,
+                loc.data_fim if loc.data_fim else "-",
+                loc.calcular_total_diarias() if loc.data_fim else "-",
+                valor_fmt,
+                loc.status.value,  # <-- .value para exibir string na tabela
             ))
 
-    def abrir_editar(self):
-        # 1. Verifica qual linha da tabela (Treeview) está selecionada
-        selecionado = self.tree.selection()
-        
-        if not selecionado:
-            messagebox.showwarning("Aviso", "Selecione um veículo para editar.", parent=self)
-            return
+    def _get_loc_id_selecionado(self, acao="selecionar"):
+        sel = self.tree.selection()
+        if not sel:
+            messagebox.showwarning("Aviso", f"Selecione uma locação para {acao}.", parent=self)
+            return None
+        return self.tree.item(sel[0])["values"][0]
 
-        # 2. Pega a placa do veículo
-        item = self.tree.item(selecionado[0])
-        placa = item['values'][0]
-
-        # 3. Busca o veículo via Controller
-        veiculo = self.controller.buscar_por_placa(placa)
-        if not veiculo:
-            messagebox.showerror("Erro", "Veículo não encontrado.", parent=self)
-            return
-
-        # 4. Abre a janela de cadastro, mas em modo de edição (passando o veículo)
-        from view.veiculo_view import JanelaCadastroVeiculo
-        janela_edicao = JanelaCadastroVeiculo(self, veiculo_existente=veiculo)
-        
-        self.wait_window(janela_edicao)
-        
-        # 5. Recarrega a tabela após a edição
+    def abrir_novo(self):
+        from view.locacao_view import JanelaCadastroLocacao
+        janela = JanelaCadastroLocacao(self)
+        self.wait_window(janela)
         self.carregar_dados()
+
+    def abrir_editar(self):
+        loc_id = self._get_loc_id_selecionado("editar")
+        if loc_id is None:
+            return
+        loc = self.controller.buscar_por_id(loc_id)
+        if not loc:
+            messagebox.showerror("Erro", "Locação não encontrada.", parent=self)
+            return
+        from view.locacao_view import JanelaCadastroLocacao
+        janela = JanelaCadastroLocacao(self, locacao_existente=loc)
+        self.wait_window(janela)
+        self.carregar_dados()
+
+    def ver_detalhes(self):
+        loc_id = self._get_loc_id_selecionado("visualizar")
+        if loc_id is None:
+            return
+        loc = self.controller.buscar_por_id(loc_id)
+        if not loc:
+            messagebox.showerror("Erro", "Locação não encontrada.", parent=self)
+            return
+        info = _montar_detalhes(loc)
+        messagebox.showinfo("Detalhes da Locação", info, parent=self)
+
+    def remover_locacao(self):
+        loc_id = self._get_loc_id_selecionado("remover")
+        if loc_id is None:
+            return
+        if not messagebox.askyesno("Confirmar", f"Remover locação #{loc_id}?", parent=self):
+            return
+        sucesso, msg = self.controller.remover_locacao(loc_id)
+        if sucesso:
+            messagebox.showinfo("Sucesso", msg, parent=self)
+            self.carregar_dados()
+        else:
+            messagebox.showerror("Erro", msg, parent=self)
+
+
+# ----------------------------------------------------------------- helper
+def _montar_detalhes(loc: Locacao) -> str:
+    status = loc.status  # agora é StatusLocacao (Enum)
+    if status == StatusLocacao.DEVOLVIDO:
+        dias  = loc.calcular_total_diarias()
+        valor = loc.calcular_valor_locacao()
+        return (f"Status: {status.value.upper()}\n"
+                f"Veículo: {loc.veiculo.placa}\n"
+                f"Data de início: {loc.data_inicio}\n"
+                f"Data de devolução: {loc.data_fim}\n"
+                f"Número de diárias: {dias}\n"
+                f"Valor total: R$ {valor:.2f}")
+    elif status == StatusLocacao.CANCELADO:
+        return (f"Status: {status.value.upper()}\n"
+                f"Veículo: {loc.veiculo.placa}\n"
+                f"Data de início: {loc.data_inicio}\n"
+                f"Data fim prevista: {loc.data_fim}\n"
+                f"A locação foi cancelada.")
+    else:  # RESERVADO ou LOCADO
+        valor_est = loc.calcular_valor_locacao()
+        return (f"Status: {status.value.upper()}\n"
+                f"Veículo: {loc.veiculo.placa}\n"
+                f"Data de início: {loc.data_inicio}\n"
+                f"Data fim prevista: {loc.data_fim}\n"
+                f"Valor estimado: R$ {valor_est:.2f}")

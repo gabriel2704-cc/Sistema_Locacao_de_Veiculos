@@ -2,51 +2,51 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-
 import tkinter as tk
-from tkinter import messagebox, ttk
-from control.veiculo_controller import VeiculoController
 
 
 class JanelaPrincipal(tk.Toplevel):
-    
-    
+    """Janela principal com barra de menus conforme especificado no trabalho."""
+
     def __init__(self, master=None):
         super().__init__(master)
-        self.title("Janela Principal")
+        self.title("Sistema de Locação de Veículos")
         self.geometry("500x300")
-        
-        self.controller = VeiculoController()
-        
-        self.criar_widgets()
+        self._criar_menu()
+        self._criar_widgets()
 
-    def criar_widgets(self):
-        lbl_titulo = tk.Label(self, text="Janela Principal", font=("Helvetica", 16, "bold"))
-        lbl_titulo.pack(pady=10)
+    def _criar_menu(self):
+        barra_menu = tk.Menu(self)
+        self.config(menu=barra_menu)
 
-        lbl_titulo1 = tk.Label(self, text="Escolha uma opção", font=("Helvetica", 10, "bold"))
-        lbl_titulo1.pack(pady=10)
+        # ---- Menu Cadastro ----
+        menu_cadastro = tk.Menu(barra_menu, tearoff=0)
+        barra_menu.add_cascade(label="Cadastro", menu=menu_cadastro)
+        menu_cadastro.add_command(label="Veículo",         command=self._abrir_veiculos)
+        menu_cadastro.add_command(label="Locações (Admin)", command=self._abrir_locacoes_admin)
 
-        # Frame para a Treeview e Scrollbar
-        frame_tree = tk.Frame(self)
-        frame_tree.pack(expand=True, fill="both", padx=20, pady=10)
+        # ---- Menu Ação ----
+        menu_acao = tk.Menu(barra_menu, tearoff=0)
+        barra_menu.add_cascade(label="Ação", menu=menu_acao)
+        menu_acao.add_command(label="Locar Veículo", command=self._abrir_locacao_usuario)
 
-        
-        # Frame para os botões de ação
-        frame_botoes = tk.Frame(self)
-        frame_botoes.pack(fill="x", padx=20, pady=5)
+    def _criar_widgets(self):
+        tk.Label(self, text="Sistema de Locação de Veículos",
+                 font=("Helvetica", 16, "bold")).pack(pady=30)
+        tk.Label(self, text="Utilize o menu acima para acessar as funcionalidades.",
+                 font=("Helvetica", 10)).pack()
 
-        btn_cadastro = tk.Button(frame_botoes, text="Gerenciar", width=10, command=self.abrir_gerenciar)
-        btn_cadastro.pack(side="left", padx=5)
+    def _abrir_veiculos(self):
+        from view.veiculo_list_view import JanelaListagemVeiculos
+        janela = JanelaListagemVeiculos(self)
+        self.wait_window(janela)
 
-        # Botão Fechar no canto direito
-        btn_fechar = tk.Button(frame_botoes, text="Fechar", width=10, command=self.destroy)
-        btn_fechar.pack(side="right", padx=5)
+    def _abrir_locacoes_admin(self):
+        from view.locacao_list_view import JanelaListagemLocacoes
+        janela = JanelaListagemLocacoes(self)
+        self.wait_window(janela)
 
-    def abrir_gerenciar(self):
-        # Vai reaproveitar a JanelaCadastroVeiculo
-        from view.gerencia_Veiculos_locacoes import JanelaGerenciar
-        janela_cadastro = JanelaGerenciar(self)
-        
-        # Faz a janela de listagem "esperar" até que a janela de cadastro seja fechada
-        self.wait_window(janela_cadastro)
+    def _abrir_locacao_usuario(self):
+        from view.locacao_usuario_view import JanelaLocacaoUsuario
+        janela = JanelaLocacaoUsuario(self)
+        self.wait_window(janela)
