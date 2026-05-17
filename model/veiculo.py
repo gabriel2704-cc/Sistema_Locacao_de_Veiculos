@@ -89,11 +89,12 @@ class Motorhome(Veiculo):
 
 class VeiculoFactory:
     @staticmethod
-    def criar_veiculo(tipo: str, placa: str, categoria: Categoria, taxa_diaria: float = 0.0):
+    def criar_veiculo(tipo: str, placa: str, categoria, taxa_diaria: float = 0.0):
         tipo_normalizado = tipo.strip().lower()
+        # converte string → Enum se necessário
+        if isinstance(categoria, str):
+            categoria = Categoria(categoria.upper())
         if tipo_normalizado == "carro":
             return Carro(placa, taxa_diaria, categoria)
         elif tipo_normalizado == "motorhome":
             return Motorhome(placa, taxa_diaria, categoria)
-        else:
-            raise ValueError(f"Tipo de veículo inválido: {tipo}. Use 'carro' ou 'motorhome'.")
